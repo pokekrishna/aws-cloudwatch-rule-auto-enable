@@ -1,6 +1,19 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "This template is used a lambda function. This is a reusable template.",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": { "default" :"Function Details"},
+          "Parameters": [
+            "S3Bucket",
+            "LambdaFunctionName"
+          ]
+        }
+      ]
+    }
+  },
   "Parameters": {
     "S3Bucket": {
       "Description": "This is the main bucket which will contain all the code and needed files to work. It assumes proper folder structure",

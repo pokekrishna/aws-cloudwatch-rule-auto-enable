@@ -1,0 +1,91 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This is the root template which will launch the entire stack. This also creates an IAM role for lambda, SNS topic, nested lambda functions, ",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Other Details"
+          },
+          "Parameters": [
+            "SNSTopicName",
+            "S3Bucket"
+          ]
+        }
+      ]
+    }
+  },
+  "Parameters": {
+    "SNSTopicName": {
+      "Description": "Name of the SNS topic which will receive the notifications",
+      "Type": "String",
+      "Default": "cloudwatch-rules"
+    },
+    "S3Bucket": {
+      "Description": "This is the main bucket which will contain all the code and needed files to work. It assumes proper folder structure",
+      "Type": "String",
+      "Default": "aws-cloudwatch-rule-auto-enable"
+    }
+  },
+  "Resources": {
+    "LambdaIAMRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ]
+      }
+    },
+    "SNSTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": {
+          "Ref": "SNSTopicName"
+        }
+      }
+    },
+    "InformEventChangeLambdaFunction": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              "https://s3.amazonaws.com",
+              {
+                "Ref": "S3Bucket"
+              },
+              "cloudformation-templates/lambda-function.json"
+            ]
+          ]
+        },
+        "Parameters": {
+          "S3Bucket": {"Ref" : "S3Bucket"},
+          "KeyName": "mykey"
+        },
+        "TimeoutInMinutes": "60"
+      }
+    }
+  },
+  "Outputs": {
+    "SNSTopicARN": {
+      "Description": "This is the topic arn which needs to be changed in the lambda functions, and email subscription has to be made to this topic",
+      "Value": {
+        "Ref": "SNSTopic"
+      }
+    }
+  }
+}
