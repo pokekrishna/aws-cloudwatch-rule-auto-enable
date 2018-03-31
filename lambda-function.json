@@ -1,0 +1,9 @@
+{
+	"AWSTemplateFormatVersion" : "2010-09-09",
+
+	"Description" : "This template is used a lambda function. This is a reusable template.",
+
+	"Parameters" : {},
+
+	"Resources" : {}
+}
