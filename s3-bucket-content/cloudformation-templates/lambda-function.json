@@ -5,7 +5,9 @@
     "AWS::CloudFormation::Interface": {
       "ParameterGroups": [
         {
-          "Label": { "default" :"Function Details"},
+          "Label": {
+            "default": "Function Details"
+          },
           "Parameters": [
             "S3Bucket",
             "LambdaFunctionName"
@@ -21,7 +23,15 @@
       "Default": "aws-cloudwatch-rule-auto-enable"
     },
     "LambdaFunctionName": {
-      "Description": "Name of the lambda function",
+      "Description": "value inherited from parent template",
+      "Type": "String"
+    },
+    "FileNameWithoutExtension": {
+      "Description": "value inherited from parent template",
+      "Type": "String"
+    },
+    "LambdaIAMRole": {
+      "Description": "value inherited from parent template",
       "Type": "String"
     }
   },
@@ -33,16 +43,57 @@
           "S3Bucket": {
             "Ref": "S3Bucket"
           },
-          "S3Key": "lambda-functions/sample-function.py.zip"
+          "S3Key": {
+            "Fn::Join": [
+              ".",
+              [
+                {
+                  "Fn::Join": [
+                    "/",
+                    [
+                      "lambda-functions",
+                      {
+                        "Ref": "FileNameWithoutExtension"
+                      }
+                    ]
+                  ]
+                },
+                "py.zip"
+              ]
+            ]
+          }
         },
         "FunctionName": {
           "Ref": "LambdaFunctionName"
         },
-        "Handler": "sample-function.lambda_handler",
+        "Handler": {
+          "Fn::Join": [
+            ".",
+            [
+              {
+                "Ref": "FileNameWithoutExtension"
+              },
+              "lambda_handler"
+            ]
+          ]
+        },
         "MemorySize": 128,
-        "Role": "arn:aws:iam::412601977023:role/lambda-admin-role",
+        "Role": {
+          "Ref": "LambdaIAMRole"
+        },
         "Runtime": "python2.7",
         "Timeout": 300
+      }
+    }
+  },
+  "Outputs": {
+    "LambdaFunctionARN": {
+      "Description": "This is the ARN of the Lambda FUnction. This will be used by the parent template to configure cloudwatch event rule.",
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdaFunction",
+          "Arn"
+        ]
       }
     }
   }

@@ -1,9 +1,25 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "This is the root template which will launch the entire stack. This also creates an IAM role for lambda, SNS topic, nested lambda functions, ",
+  "Description": "This is the root template which will launch the entire stack. This also creates an IAM role for lambda, SNS topic, nested lambda functions, cloudwatch events.",
   "Metadata": {
     "AWS::CloudFormation::Interface": {
       "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Active Pipeline : Enables all the listed disabled Rule, in every 24 hours."
+          },
+          "Parameters": [
+            "EnableCloudwatchEventsLambdaFunctionName"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Passive Pipeline : Informs When a Rule is Disabled"
+          },
+          "Parameters": [
+            "InformEventChangeLambdaFunctionName"
+          ]
+        },
         {
           "Label": {
             "default": "Other Details"
@@ -26,6 +42,16 @@
       "Description": "This is the main bucket which will contain all the code and needed files to work. It assumes proper folder structure",
       "Type": "String",
       "Default": "aws-cloudwatch-rule-auto-enable"
+    },
+    "InformEventChangeLambdaFunctionName": {
+      "Description": "Name of passive lambda function",
+      "Type": "String",
+      "Default": "inform-event-change-cf"
+    },
+    "EnableCloudwatchEventsLambdaFunctionName": {
+      "Description": "Name of active lambda function",
+      "Type": "String",
+      "Default": "enable-cloudwatch-events-cf"
     }
   },
   "Resources": {
@@ -73,10 +99,107 @@
           ]
         },
         "Parameters": {
-          "S3Bucket": {"Ref" : "S3Bucket"},
-          "KeyName": "mykey"
+          "S3Bucket": {
+            "Ref": "S3Bucket"
+          },
+          "LambdaFunctionName": {
+            "Ref": "InformEventChangeLambdaFunctionName"
+          },
+          "FileNameWithoutExtension": "inform-event-change",
+          "LambdaIAMRole": {
+            "Fn::GetAtt": [
+              "LambdaIAMRole",
+              "Arn"
+            ]
+          }
         },
         "TimeoutInMinutes": "60"
+      }
+    },
+    "EnableCloudwatchEventsLambdaFunction": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              "https://s3.amazonaws.com",
+              {
+                "Ref": "S3Bucket"
+              },
+              "cloudformation-templates/lambda-function.json"
+            ]
+          ]
+        },
+        "Parameters": {
+          "S3Bucket": {
+            "Ref": "S3Bucket"
+          },
+          "LambdaFunctionName": {
+            "Ref": "EnableCloudwatchEventsLambdaFunctionName"
+          },
+          "FileNameWithoutExtension": "enable-cloudwatch-events",
+          "LambdaIAMRole": {
+            "Fn::GetAtt": [
+              "LambdaIAMRole",
+              "Arn"
+            ]
+          }
+        },
+        "TimeoutInMinutes": "60"
+      }
+    },
+    "InformEventChangeRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "EventPattern": {
+          "source": [
+            "aws.events"
+          ],
+          "detail-type": [
+            "AWS API Call via CloudTrail"
+          ],
+          "detail": {
+            "eventSource": [
+              "events.amazonaws.com"
+            ],
+            "eventName": [
+              "PutRule"
+            ]
+          }
+        },
+        "Name": "inform-event-change",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "inform-event-change",
+            "Arn": {
+              "Fn::GetAtt": [
+                "InformEventChangeLambdaFunction",
+                "Outputs.LambdaFunctionARN"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "EnableCloudwatchEventsRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Name": "enable-cloudwatch-events",
+        "ScheduleExpression": "rate(24 hours)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "ienable-cloudwatch-events",
+            "Arn": {
+              "Fn::GetAtt": [
+                "EnableCloudwatchEventsLambdaFunction",
+                "Outputs.LambdaFunctionARN"
+              ]
+            }
+          }
+        ]
       }
     }
   },
