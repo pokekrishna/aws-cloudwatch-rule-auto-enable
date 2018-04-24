@@ -28,7 +28,7 @@
             "SNSTopicName",
             "S3Bucket",
             "LambdaEnvironmentEventList",
-            "SNSEMailIDsToNotify"
+            "SNSEMailIDToNotify"
           ]
         }
       ]
@@ -121,6 +121,9 @@
           ]
         },
         "Parameters": {
+          "LambdaEnvironmentEventList": {
+            "Ref": "LambdaEnvironmentEventList"
+          },
           "S3Bucket": {
             "Ref": "S3Bucket"
           },
