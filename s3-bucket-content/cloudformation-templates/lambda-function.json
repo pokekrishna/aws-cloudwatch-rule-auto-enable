@@ -33,12 +33,23 @@
     "LambdaIAMRole": {
       "Description": "value inherited from parent template",
       "Type": "String"
+    },
+    "LambdaEnvironmentEventList": {
+      "Description": "comma separated value (with no spaces) of events to monitor",
+      "Type": "String"
     }
   },
   "Resources": {
     "LambdaFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
+        "Environment": {
+          "Variables": {
+            "environ_eventlist": {
+              "Ref": "LambdaEnvironmentEventList"
+            }
+          }
+        },
         "Code": {
           "S3Bucket": {
             "Ref": "S3Bucket"

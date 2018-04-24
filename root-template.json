@@ -52,6 +52,10 @@
       "Description": "Name of active lambda function",
       "Type": "String",
       "Default": "enable-cloudwatch-events-cf"
+    },
+    "LambdaEnvironmentEventList": {
+      "Description": "comma separated value (with no spaces) of events to monitor",
+      "Type": "String"
     }
   },
   "Resources": {
@@ -134,6 +138,9 @@
         "Parameters": {
           "S3Bucket": {
             "Ref": "S3Bucket"
+          },
+          "LambdaEnvironmentEventList": {
+            "Ref": "LambdaEnvironmentEventList"
           },
           "LambdaFunctionName": {
             "Ref": "EnableCloudwatchEventsLambdaFunctionName"
